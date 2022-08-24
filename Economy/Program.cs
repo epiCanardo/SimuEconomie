@@ -10,7 +10,7 @@
             {
                 World.Instance.StartSimulation();
             });
-
+            
             while (!stop)
             {
                 Console.CursorVisible = false;
@@ -33,7 +33,7 @@
                 // affichage des marchands
                 w("Liste des marchands itinérants", ConsoleColor.Cyan, true);
                 w("**************************************************");
-                w($"{"Rang",-10} | {"Nom du marchand",-20} | {"Gain total",-20} | {"Crédits",-20}| {"Localisation",-50}| {"Action",-50}| {"Contenu soute",-20}");
+                w($"{"Rang",-10} | {"Nom du marchand",-20} | {"Gain total",-20} | {"Crédits",-20} | {"Capacité vaisseau",-20} | {"Action",-100} | {"Contenu soute",-20}");
 
                 var traders = World.Instance.FlyingTraders.OrderByDescending(x => x.TotalGain);
                 var i = 1;
@@ -42,8 +42,6 @@
                     w($"{i,-10} | " + trader.ToString());
                     i++;
                 }
-
-                w("");
 
                 Thread.Sleep(50);
             }
