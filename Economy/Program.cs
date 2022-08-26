@@ -1,4 +1,9 @@
-﻿namespace Economy
+﻿using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using static System.Collections.Specialized.BitVector32;
+
+namespace Economy
 {
     class Program
     {
@@ -13,27 +18,49 @@
             
             while (!stop)
             {
-                Console.CursorVisible = false;
-                Console.SetCursorPosition(0, 0);
-
-                // affichage du timer
-                var date = new TimeSpan(World.Instance.GetElapsedTicks());
-
-                w($"Temps de simulation : {date.Hours} heures {date.Minutes} minutes {date.Seconds} secondes");
-                w("");
+                UpdateConsoleHeader();
 
                 // affichage des stations
-                w("Liste des stations", ConsoleColor.Yellow, true);
+                //w("Liste des stations", ConsoleColor.Yellow, true);
+                //w("**************************************************");
+                //foreach (var station in World.Instance.Stations)
+                //{
+                //    w(station.ToString());
+                //}
+
+                // affichage des biens
+                w("Liste des biens au commerce", ConsoleColor.Yellow, true);
                 w("**************************************************");
-                foreach (var station in World.Instance.Stations)
+
+                List<string> text = new List<string>();
+
+                foreach (Station station in World.Instance.Stations)
                 {
-                    w(station.ToString());
+                   text.Add($"{station.Name,-47}");
                 }
+                w($"{string.Join("| ", text)}");
+
+                text.Clear();
+
+                foreach (MerchendiseType merchendiseType in World.Instance.MerchendiseTypes)
+                {
+                    text.Clear();
+                    
+                    foreach (TradingLine line in World.Instance.Stations.SelectMany(x => x.Board.TradingLines)
+                                 .Where(x => x.Item.MerchendiseType == merchendiseType))
+                    {
+                        text.Add(line.ToString());
+                    }
+
+                    w(string.Join(" | ", text));
+                }
+
+                w("**************************************************");
 
                 // affichage des marchands
                 w("Liste des marchands itinérants", ConsoleColor.Cyan, true);
                 w("**************************************************");
-                w($"{"Rang",-10} | {"Nom du marchand",-20} | {"Gain total",-20} | {"Crédits",-20} | {"Capacité vaisseau",-20} | {"Action",-100} | {"Contenu soute",-20}");
+                w($"{"Rang",-10} | {"Nom du marchand",-20} | {"Gain total",-12} | {"Crédits",-10} | {"Stockage actuel",-20} | {"Action",-80} | {"Contenu soute",-20}");
 
                 var traders = World.Instance.FlyingTraders.OrderByDescending(x => x.TotalGain);
                 var i = 1;
@@ -47,7 +74,7 @@
             }
         }
 
-        private void UpdateConsole()
+        private static void UpdateConsoleHeader()
         {
             Console.CursorVisible = false;
             Console.SetCursorPosition(0, 0);

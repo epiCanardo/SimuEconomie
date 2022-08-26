@@ -27,7 +27,7 @@ namespace Economy
 
     public class TradingLine
     {
-        public Storage Owner { get; set; }
+        public Station Owner { get; set; }
         public Merchendise Item { get; set; }
         public int QuantityToBuy { get; set; }
         public int QuantityToSell { get; set; }
@@ -41,16 +41,13 @@ namespace Economy
 
         public override string ToString()
         {
-            // cas de stock plein : pas de prix d'achat
-            //string buyingPrice = (UnitBuyingPrice > 0) ? UnitBuyingPrice.ToString("#.##") : "--";
-            // cas de stock vide : pas de prix de vente
-            //string sellingPrice = (UnitSellingPrice < 100000) ? UnitSellingPrice.ToString("#.##") : "--";
+            string itemName = (Item.MerchendiseType == Owner.Production) ? Item.Name + "(P)" : Item.Name;
 
-            string buyingPrice = UnitBuyingPrice.ToString("#.##");
-            string sellingPrice = UnitSellingPrice.ToString("#.##");
-
-            return $"{Item.Name,-20} | {Item.Quantity,-20} | {QuantityToBuy,-20} | {buyingPrice,-20} | {QuantityToSell,-20} | {sellingPrice,-20}";
+            return $"{itemName,-10} | {QuantityText,-20} | {PricesText,-10}";
         }
+        private string QuantityText => $"{Item.Quantity} ({QuantityToBuy}/{QuantityToSell})";
+
+        private string PricesText => $"{UnitBuyingPrice:#.##}/{UnitSellingPrice.ToString("#.##")}";
     }
 
     public class TradingBoard
@@ -62,10 +59,10 @@ namespace Economy
             TradingLines = new List<TradingLine>();
         }
 
-        public override string ToString()
+        public string BoardText()
         {
             StringBuilder result = new StringBuilder();
-            result.AppendLine($"{"Nom",-20} | {"Quantité dispo",-20} | {"Achète max",-20} | {"Achète aux prix",-20} | {"Vends max",-20} | {"Vend aux prix",-20}");
+            result.AppendLine($"{"Nom",-10} | {"Quantités dispo",-20} | {"Tarifs",-10}");
             foreach (TradingLine line in TradingLines)
             {
                 result.AppendLine(line.ToString());

@@ -41,7 +41,6 @@ namespace Economy
     public class FixedTrader : Trader
     {
         public Station WorkingStation { get; set; }
-        public MerchendiseType Production { get; set; }
 
         private bool closureRequested = false;
 
@@ -68,7 +67,7 @@ namespace Economy
                 Thread.Sleep(1000);
 
                 // modification des stocks
-                TradingLine line = WorkingStation.Board.TradingLines.First(x => x.Item.MerchendiseType.Equals(Production));
+                TradingLine line = WorkingStation.Board.TradingLines.First(x => x.Item.MerchendiseType.Equals(WorkingStation.Production));
                 int remainingQuantity = (int)Math.Floor(((decimal)WorkingStation.StorageCapacity - (decimal)(line.Item.Quantity * line.Item.Weight)) / (decimal)line.Item.Weight);
                 line.Item.Quantity += Math.Min(remainingQuantity, 10);
                 WorkingStation.UpdateLine(line, line.Item);
@@ -251,9 +250,11 @@ namespace Economy
         public override string ToString()
         {
             StringBuilder result = new StringBuilder();
-            result.Append($"{Name,-20} | {TotalGain.ToString("#.##"),-20} | {Account.ToString("#.##"),-20} | {OwnedShip.StorageCapacity,-20} | {GetCurrentAction(),-100} | {GetStorage(),-20}");
+            result.Append($"{Name,-20} | {TotalGain.ToString("#.##"),-12} | {Account.ToString("#.##"),-10} | {CargoText,-20} | {GetCurrentAction(),-80} | {GetStorage(),-20}");
             return result.ToString();
         }
+
+        private string CargoText => $"{OwnedShip.TotalCargoHold()} / {OwnedShip.StorageCapacity}";
 
         private string GetCurrentAction()
         {

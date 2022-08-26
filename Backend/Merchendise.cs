@@ -24,5 +24,7 @@ namespace Economy
         public int Weight { get; set; }
         public int Quantity { get; set; }
         public MerchendiseType MerchendiseType { get; set; }
+        public int StackWeight => Weight * Quantity;
+
     }
 }

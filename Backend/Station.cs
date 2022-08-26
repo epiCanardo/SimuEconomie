@@ -10,6 +10,8 @@ namespace Economy
     {
         public TradingBoard Board { get; set; }
 
+        public MerchendiseType Production { get; set; }
+
         /// <summary>
         /// Initialisation du TradingBoard
         /// </summary>
@@ -89,7 +91,7 @@ namespace Economy
             StringBuilder result = new StringBuilder();
             result.AppendLine($"Biens proposés au commerce - Station {Name}");
             result.AppendLine("*".PadRight(50, '*'));
-            result.AppendLine(Board.ToString());
+            result.AppendLine(Board.BoardText());
             return result.ToString();
         }
     }
