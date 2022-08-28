@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Backend;
+﻿using Backend;
 
 namespace Economy
 {
@@ -15,7 +10,8 @@ namespace Economy
         Iron = 3,
         Water = 4,
         Silicon = 5,
-        Deuterium = 6
+        Deuterium = 6,
+        Nothing = 100
     }
 
     public class Merchendise : Entity
@@ -24,6 +20,8 @@ namespace Economy
         public int Weight { get; set; }
         public int Quantity { get; set; }
         public MerchendiseType MerchendiseType { get; set; }
+        public int BaseProductionRate => 1;
+        public int BaseConsumptionRate => 1;
         public int StackWeight => Weight * Quantity;
 
     }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Backend;
+﻿using System.Text;
 
 namespace Economy
 {
@@ -19,6 +14,8 @@ namespace Economy
         public double SoldPrice { get; set; }
         public double TransportationCost { get; set; }
         public double TransportationDistance { get; set; }
+        public double EstimatedGain { get; set; }
+        public double FinalGain { get; set; }
         public Trade()
         {
             Completed = false;
@@ -41,13 +38,27 @@ namespace Economy
 
         public override string ToString()
         {
-            string itemName = (Item.MerchendiseType == Owner.Production) ? Item.Name + "(P)" : Item.Name;
+            string itemName = Item.Name;
+
+            if (Item.MerchendiseType == Owner.Production)
+                itemName = Item.Name + "(P)";
+
+            else if (Item.MerchendiseType == Owner.Consumption)
+                itemName = Item.Name + "(C)";
 
             return $"{itemName,-10} | {QuantityText,-20} | {PricesText,-10}";
         }
         private string QuantityText => $"{Item.Quantity} ({QuantityToBuy}/{QuantityToSell})";
 
-        private string PricesText => $"{UnitBuyingPrice:#.##}/{UnitSellingPrice.ToString("#.##")}";
+        private string PricesText => $"{PrinceToString(UnitBuyingPrice)}/{PrinceToString(UnitSellingPrice)}";
+
+        private string PrinceToString(double price)
+        {
+            if (price == -1)
+                return "--";
+            else
+                return $"{price:#.##}";
+        }
     }
 
     public class TradingBoard

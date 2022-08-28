@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace Economy
 {
@@ -11,6 +7,7 @@ namespace Economy
         public TradingBoard Board { get; set; }
 
         public MerchendiseType Production { get; set; }
+        public MerchendiseType Consumption { get; set; }
 
         /// <summary>
         /// Initialisation du TradingBoard
@@ -41,48 +38,74 @@ namespace Economy
         {
             lock (objectToLock)
             {
-
-                // calcul du prix d'achat initial et de la quantité
                 // 1. calcul de la capacité restante
-                //int remainingSpace = GetRemainingStorageSpace();
                 int remainingSpace = StorageCapacity - (merchendise.Quantity * merchendise.Weight);
 
                 // 2. calcul de la quantité du produit qu'il est possible d'acheter
-                var buyingQuantity = (int)Math.Floor((decimal)remainingSpace / (decimal)merchendise.Weight);
-                line.QuantityToBuy = buyingQuantity;
 
-                // 3. calcul des prix
-                // si quantité restante < 25% du total achetable = shortage => hausse du prix d'achat de 10% et hausse du prix de vente de 10%
-                if ((double)merchendise.Quantity < 0.25 * (double)(merchendise.Quantity + line.QuantityToBuy))
-                {
-                    line.UnitBuyingPrice = merchendise.UniversalValue + 0.1 * merchendise.UniversalValue;
-                    line.UnitSellingPrice = merchendise.UniversalValue + 0.1 * merchendise.UniversalValue;
-                }
-                // si quantité restante > 75% du total achetable = excés => baisse du prix d'achat de 10% et baisse du prix de vente de 10%
-                else if ((double)merchendise.Quantity > 0.75 * (double)(merchendise.Quantity + line.QuantityToBuy))
-                {
-                    line.UnitBuyingPrice = merchendise.UniversalValue - 0.1 * merchendise.UniversalValue;
-                    line.UnitSellingPrice = merchendise.UniversalValue - 0.1 * merchendise.UniversalValue;
-                }
-                // si pas de shortage ni d'excès, retour au prix universel
+                // la station n'achète pas ce qu'elle produit
+                if (Production == merchendise.MerchendiseType)
+                    line.QuantityToBuy = 0;
                 else
                 {
-                    line.UnitBuyingPrice = merchendise.UniversalValue;
-                    line.UnitSellingPrice = merchendise.UniversalValue;
+                    var buyingQuantity = (int)Math.Floor(remainingSpace / (decimal)merchendise.Weight);
+                    line.QuantityToBuy = buyingQuantity;
                 }
 
-                line.QuantityToSell = merchendise.Quantity;
+                // 3. calcul des prix
 
-                //line.UnitSellingPrice = (line.QuantityToSell > 0) ? merchendise.UniversalValue - malus : 0;
+                // règles spécifiques si la station produit le bien
+                if (Production == merchendise.MerchendiseType)
+                {                    
+                    line.UnitBuyingPrice = -1;
+                    // le prix de vente initial est fixé à -20% par rapport à sa valeur universelle
+                    line.UnitSellingPrice = 0.8 * merchendise.UniversalValue;
+                }
+                // règles spécifiques si la station consomme le bien
+                else if (Consumption == merchendise.MerchendiseType)
+                {
+                    line.UnitSellingPrice = -1;
+                    // le prix d'achat initial est fixé à +20% par rapport à sa valeur universelle
+                    line.UnitBuyingPrice = 1.2 * merchendise.UniversalValue;
+                }
+                else
+                {                    
+                    // si quantité restante < 25% du total achetable = shortage => hausse du prix d'achat de 10% et hausse du prix de vente de 10%
+                    if (merchendise.Quantity < 0.25 * (merchendise.Quantity + line.QuantityToBuy))
+                    {
+                        line.UnitBuyingPrice = merchendise.UniversalValue + 0.1 * merchendise.UniversalValue;
+                        line.UnitSellingPrice = merchendise.UniversalValue + 0.1 * merchendise.UniversalValue;
+                    }
+                    // si quantité restante > 75% du total achetable = excès => baisse du prix d'achat de 10% et baisse du prix de vente de 10%
+                    else if (merchendise.Quantity > 0.75 * (merchendise.Quantity + line.QuantityToBuy))
+                    {
+                        line.UnitBuyingPrice = merchendise.UniversalValue - 0.1 * merchendise.UniversalValue;
+                        line.UnitSellingPrice = merchendise.UniversalValue - 0.1 * merchendise.UniversalValue;
+                    }
+                    // si pas de shortage ni d'excès, retour au prix universel avec une marge <> 1% entre achat et vente
+                    else
+                    {
+                        line.UnitBuyingPrice = merchendise.UniversalValue;
+                        line.UnitSellingPrice = merchendise.UniversalValue;
+                    }
 
-                //var malus = ((double)remainingSpace / (double)StorageCapacity) / 10 * merchendise.UniversalValue;
-                //var malus = (1 - ((double)buyingQuantity / (double)(merchendise.Quantity + buyingQuantity))) / 10 * merchendise.UniversalValue;                
-                //line.UnitBuyingPrice = (buyingQuantity > 0) ? merchendise.UniversalValue + malus : 0;
+                    // dans tous les cas, marge entre achat et vente (A -1% / V + 1%)
+                    line.UnitBuyingPrice -= 0.01 * merchendise.UniversalValue;
+                    line.UnitSellingPrice += 0.01 * merchendise.UniversalValue;
+                }
 
-                // le prix de vente est fixé à prix d'achat + 1%
-                //line.QuantityToSell = merchendise.Quantity;
-                //line.UnitSellingPrice = (merchendise.Quantity > 0) ? line.UnitBuyingPrice + line.UnitBuyingPrice * 0.01 : 100000;
-                //line.UnitSellingPrice = line.UnitBuyingPrice + line.UnitBuyingPrice * 0.01;
+                // 4. quantité de produit à la vente => correspond au stock
+                if (Consumption == merchendise.MerchendiseType)
+                    line.QuantityToSell = 0;
+                else
+                    line.QuantityToSell = merchendise.Quantity;
+
+                // 5. Pour affichage lorsque le bien n'est pas à acheter ou à vendre
+                if (line.QuantityToBuy == 0)
+                    line.UnitBuyingPrice = -1;
+
+                if (line.QuantityToSell == 0)
+                    line.UnitSellingPrice = -1;
             }
         }
 

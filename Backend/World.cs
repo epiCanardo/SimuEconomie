@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 
 namespace Economy
 {
@@ -33,23 +27,22 @@ namespace Economy
             {
                 new()
                 {
-                    ID = 0, Coordinates = new double[] {0, 0, 0}, Production = MerchendiseType.Gold,
+                    ID = 0, Coordinates = new double[] {0, 0, 0}, Production = MerchendiseType.Gold, Consumption = MerchendiseType.Nothing,
                     Name = "Le marché", StorageCapacity = 1000
                 },
                 new()
                 {
-                    ID = 1, Coordinates = new double[] {0, 0, 1}, Production = MerchendiseType.Iron,
+                    ID = 1, Coordinates = new double[] {0, 0, 1}, Production = MerchendiseType.Iron,Consumption = MerchendiseType.Nothing,
                     Name = "Le trou perdu", StorageCapacity = 2500
                 },
                 new()
                 {
-                    ID = 2, Coordinates = new double[] {0, 0, 2}, Production = MerchendiseType.Orionum,
-                    Name = "Le mauvais endroit",
-                    StorageCapacity = 5000
+                    ID = 2, Coordinates = new double[] {0, 0, 2}, Consumption = MerchendiseType.Gold, Production = MerchendiseType.Nothing,
+                    Name = "Le mauvais endroit", StorageCapacity = 5000
                 },
                 new()
                 {
-                    ID = 3, Coordinates = new double[] {0, 0, 3}, Production = MerchendiseType.Deuterium,
+                    ID = 3, Coordinates = new double[] {0, 0, 3}, Consumption = MerchendiseType.Iron, Production = MerchendiseType.Nothing,
                     Name = "La fortune", StorageCapacity = 10000
                 }
             };
@@ -258,12 +251,12 @@ namespace Economy
 
         private int GetShortageMaxBound(int weight, int capacity)
         {
-            return (int) Math.Floor((double)(capacity / weight) * 0.25);
+            return (int) Math.Floor(capacity / weight * 0.25);
         }
 
         private int GetExcessMinBound(int weight, int capacity)
         {
-            return (int)Math.Floor((double)(capacity / weight) * 0.75);
+            return (int)Math.Floor(capacity / weight * 0.75);
         }
 
         private int GetMaxBound(int weight, int capacity)

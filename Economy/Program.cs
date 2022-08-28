@@ -1,9 +1,4 @@
-﻿using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using static System.Collections.Specialized.BitVector32;
-
-namespace Economy
+﻿namespace Economy
 {
     class Program
     {
@@ -60,13 +55,13 @@ namespace Economy
                 // affichage des marchands
                 w("Liste des marchands itinérants", ConsoleColor.Cyan, true);
                 w("**************************************************");
-                w($"{"Rang",-10} | {"Nom du marchand",-20} | {"Gain total",-12} | {"Crédits",-10} | {"Stockage actuel",-20} | {"Action",-80} | {"Contenu soute",-20}");
+                w($"{"Rang",-5} | {"Nom du marchand",-20} | {"Gain total",-10} | {"Crédits",-10} | {"Trades",-8} | {"Dist. tot.",-10} | {"Dernier trade",-15} | {"Stockage actuel",-15} | {"Action",-80} | {"Contenu soute",-20}");
 
                 var traders = World.Instance.FlyingTraders.OrderByDescending(x => x.TotalGain);
                 var i = 1;
                 foreach (var trader in traders)
                 {
-                    w($"{i,-10} | " + trader.ToString());
+                    w($"{i,-5} | " + trader.ToString());
                     i++;
                 }
 
