@@ -1,0 +1,84 @@
+{
+  "consoleRefreshTick": 50,
+  "demandsUpdateTick": 10000,
+  "stations": [
+    {
+      "production": 0,
+      "consumption": 0,
+      "mainTick": 5000,
+      "storageCapacity": 1000,
+      "id": 0,
+      "name": "Station 1",
+      "coordinates": [ 0, 0, 0 ]
+    },
+    {
+      "production": 3,
+      "consumption": 3,
+      "mainTick": 5000,
+      "storageCapacity": 2500,
+      "id": 1,
+      "name": "Station 2",
+      "coordinates": [ 0, 0, 1 ]
+    },
+    {
+      "production": 6,
+      "consumption": 6,
+      "mainTick": 5000,
+      "storageCapacity": 5000,
+      "id": 2,
+      "name": "Station 3",
+      "coordinates": [ 0, 0, 2 ]
+    },
+    {
+      "production": 1,
+      "consumption": 1,
+      "mainTick": 10000,
+      "storageCapacity": 1000,
+      "id": 3,
+      "name": "Station 4",
+      "coordinates": [ 0, 0, 3 ]
+    }
+  ],
+  "universalMerchendises": [
+    {
+      "name": "Or",
+      "value": 100,
+      "weight": 10,
+      "merchendiseType": 0,
+      "baseProductionRate": 1,
+      "baseConsumptionRate": 1,
+      "news": null,
+      "demand": 0
+    },
+    {
+      "name": "Fer",
+      "value": 50,
+      "weight": 10,
+      "merchendiseType": 3,
+      "baseProductionRate": 1,
+      "baseConsumptionRate": 1,
+      "news": null,
+      "demand": 0
+    },
+    {
+      "name": "H2",
+      "value": 300,
+      "weight": 1,
+      "merchendiseType": 6,
+      "baseProductionRate": 1,
+      "baseConsumptionRate": 1,
+      "news": null,
+      "demand": 0
+    },
+    {
+      "name": "Orionum",
+      "value": 500,
+      "weight": 50,
+      "merchendiseType": 1,
+      "baseProductionRate": 1,
+      "baseConsumptionRate": 1,
+      "news": null,
+      "demand": 0
+    }
+  ]
+}

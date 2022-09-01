@@ -1,12 +1,10 @@
 ﻿using System.Text;
-using Backend;
 
-namespace Economy
+namespace Backend
 {
     public abstract class Trader : Entity
     {
         protected static Random rnd = new(DateTime.Now.Millisecond);
-
         public double Account { get; set; }
         public TraderState CurrentState { get; set; }
         public List<Trade> Trades { get; set; }
@@ -29,52 +27,25 @@ namespace Economy
     {
         public Station WorkingStation { get; set; }
 
-        private bool closureRequested = false;
-
-        public async Task Loop()
+        public async Task StorageCleanup()
         {
-            // démarrage du temps
-
             // boucle principale du jeu 
-            while (!closureRequested)
+            while (true)
             {
+                Thread.Sleep(1000);
+
                 // scan des biens pour réaligner les stocks en cas de dépassement temporaire
                 foreach (TradingLine tradeline in WorkingStation.Board.TradingLines)
                 {
                     if (tradeline.QuantityToBuy < 0)
-                        tradeline.Item.Quantity = (int)Math.Floor(WorkingStation.StorageCapacity / (decimal)tradeline.Item.Weight);
+                        tradeline.Item.Quantity = (int)Math.Floor(WorkingStation.StorageCapacity / (decimal)tradeline.Item.UniversalMerchendise.Weight);
 
                     if (tradeline.Item.Quantity < 0)
                         tradeline.Item.Quantity = 0;
 
                     WorkingStation.UpdateLine(tradeline, tradeline.Item);
                 }
-
-                Thread.Sleep(1000);
-
-                // Production des biens
-                TradingLine line = WorkingStation.Board.TradingLines.FirstOrDefault(x => x.Item.MerchendiseType.Equals(WorkingStation.Production));
-                if (line != null)
-                {
-                    int remainingQuantity = (int)Math.Floor((WorkingStation.StorageCapacity - (decimal)(line.Item.Quantity * line.Item.Weight)) / line.Item.Weight);
-                    if (remainingQuantity > line.Item.BaseProductionRate)
-                        line.Item.Quantity += line.Item.BaseProductionRate;
-                    WorkingStation.UpdateLine(line, line.Item);
-                }
-
-                // Consommation des biens
-                line = WorkingStation.Board.TradingLines.FirstOrDefault(x => x.Item.MerchendiseType.Equals(WorkingStation.Consumption));
-                if (line != null && line.Item.Quantity > line.Item.BaseConsumptionRate)
-                {
-                    line.Item.Quantity -= line.Item.BaseConsumptionRate;
-                    WorkingStation.UpdateLine(line, line.Item);
-                }
             }
-        }
-
-        public void Close()
-        {
-            closureRequested = true;
         }
     }
 
@@ -85,12 +56,10 @@ namespace Economy
         public Entity DestinationPoint { get; set; }
         public double TotalDistance { get; set; }
 
-        private bool closureRequested = false;
-
-        public async Task Loop()
+        public async Task MainLoop()
         {
             // boucle principale du marchand
-            while (!closureRequested)
+            while (true)
             {
                 // attente systématique aléatoire
                 Thread.Sleep(rnd.Next(1000, 5000));
@@ -107,16 +76,20 @@ namespace Economy
 
                             // uniquement une seule marchandise pour le moment !  
                             // on vérifie pas s'il reste de la place, on s'en bat les couilles on balance tout !
-                            TradingLine line = (OwnedShip.Localisation as Station).Board.TradingLines.First(x => x.Item.MerchendiseType == OwnedShip.Merchendises[0].MerchendiseType);                            
+                            TradingLine line = (OwnedShip.Localisation as Station).Board.TradingLines.First(x =>
+                                x.Item.UniversalMerchendise.MerchendiseType ==
+                                OwnedShip.Merchendises[0].UniversalMerchendise.MerchendiseType);
 
                             // mise à jour du trade pour historique
                             Trade trade = Trades.Last(x => !x.Completed);
                             trade.SoldPrice = OwnedShip.Merchendises[0].Quantity * line.UnitBuyingPrice;
                             trade.SoldQuantity = OwnedShip.Merchendises[0].Quantity;
-                            trade.Completed = true;                            
+                            trade.Completed = true;
 
                             // ajout au stockage de la station
-                            Merchendise merchendise = (OwnedShip.Localisation as Station).Merchendises.First(x => x.MerchendiseType == line.Item.MerchendiseType);
+                            Merchendise merchendise = (OwnedShip.Localisation as Station).Merchendises.First(x =>
+                                x.UniversalMerchendise.MerchendiseType ==
+                                line.Item.UniversalMerchendise.MerchendiseType);
                             merchendise.Quantity += trade.SoldQuantity;
 
                             // mise à jour du solde
@@ -140,26 +113,34 @@ namespace Economy
                         int buyQty = 0;
                         Station selectedStation = null;
                         TradingLine selectedLine = null;
-                        double estimatedgain = -1000; // limite de perte. si aucun trade > à cette valeur, le trader attend le prochain tick
+                        double
+                            estimatedgain =
+                                -1000; // limite de perte. si aucun trade > à cette valeur, le trader attend le prochain tick
                         double transportationCost = 0;
 
                         // 3. calcul du meilleur trade
                         // itération sur la liste des marchandises présentes dans la station
-                        foreach (TradingLine line in (OwnedShip.Localisation as Station).Board.TradingLines.Where(x => x.QuantityToSell > 0))
+                        foreach (TradingLine line in (OwnedShip.Localisation as Station).Board.TradingLines.Where(x =>
+                                     x.QuantityToSell > 0))
                         {
                             // on vérifie la quantité max à acheter
-                            var maxtoBuy = Convert.ToInt32(Math.Min(OwnedShip.GetRemainingStorageSpace() / line.Item.Weight, Math.Min(line.QuantityToSell, Math.Floor(Account / line.UnitSellingPrice))));
+                            var maxtoBuy = Convert.ToInt32(Math.Min(
+                                OwnedShip.GetRemainingStorageSpace() / line.Item.UniversalMerchendise.Weight,
+                                Math.Min(line.QuantityToSell, Math.Floor(Account / line.UnitSellingPrice))));
 
                             // on cherche le prix d'achat le plus élevé dans les autres stations
                             if (maxtoBuy > 0)
                             {
-                                IOrderedEnumerable<TradingLine> sortedLines = World.Instance.Stations
+                                IOrderedEnumerable<TradingLine> sortedLines = World.Instance.SimulationParameters.Stations
                                     .Where(x => x.ID != StartingPoint.ID) // on exclu la station actuelle
-                                    .SelectMany(x => x.Board.TradingLines) // on liste toutes les lignes de toutes les stations
-                                    .Where(x => x.Item.MerchendiseType == line.Item.MerchendiseType &&
+                                    .SelectMany(x =>
+                                        x.Board.TradingLines) // on liste toutes les lignes de toutes les stations
+                                    .Where(x => x.Item.UniversalMerchendise.MerchendiseType ==
+                                                line.Item.UniversalMerchendise.MerchendiseType &&
                                                 x.QuantityToBuy >= maxtoBuy /*&&
                                                 x.UnitBuyingPrice >= line.UnitSellingPrice*/) // critères de choix : même marchandise, peut acheter, trade brut positif ou neutre
-                                    .OrderByDescending(x => x.UnitBuyingPrice); // tri descendant sur le prix d'achat cible
+                                    .OrderByDescending(x =>
+                                        x.UnitBuyingPrice); // tri descendant sur le prix d'achat cible
 
                                 // on parcours les trades candidats pour sélectionner le meilleur
                                 foreach (TradingLine sortedLine in sortedLines)
@@ -169,7 +150,9 @@ namespace Economy
                                     double sellingprice = sortedLine.UnitBuyingPrice * maxtoBuy;
 
                                     // déduction du prix du trajet
-                                    transportationCost = Math.Round(line.Owner.DistanceWithOtherStorage(sortedLine.Owner) * (OwnedShip.StorageCapacity * 0.2),
+                                    transportationCost = Math.Round(
+                                        line.Owner.DistanceWithOtherStorage(sortedLine.Owner) *
+                                        (OwnedShip.StorageCapacity * 0.2),
                                         2);
 
                                     double localgain = sellingprice - buyprice - transportationCost;
@@ -189,7 +172,9 @@ namespace Economy
                         if (buyQty > 0)
                         {
                             // retrait du stockage de la station
-                            Merchendise item = (OwnedShip.Localisation as Station).Merchendises.First(x => x.MerchendiseType == selectedLine.Item.MerchendiseType);
+                            Merchendise item = (OwnedShip.Localisation as Station).Merchendises.First(x =>
+                                x.UniversalMerchendise.MerchendiseType ==
+                                selectedLine.Item.UniversalMerchendise.MerchendiseType);
                             item.Quantity -= buyQty;
 
                             Trade trade = new Trade
@@ -200,9 +185,11 @@ namespace Economy
                                 BoughtPrice = buyQty * selectedLine.UnitSellingPrice,
                                 BoughtQuantity = buyQty,
                                 TransportationCost = transportationCost,
-                                TransportationDistance = Convert.ToInt32((OwnedShip.Localisation as Station).DistanceWithOtherStorage(selectedStation)),
+                                TransportationDistance =
+                                    Convert.ToInt32(
+                                        (OwnedShip.Localisation as Station).DistanceWithOtherStorage(selectedStation)),
                                 EstimatedGain = estimatedgain
-                            };                            
+                            };
 
                             // paiement
                             Account -= trade.BoughtPrice;
@@ -210,11 +197,10 @@ namespace Economy
                             // ajout dans la soute
                             OwnedShip.Merchendises.Add(new Merchendise
                             {
-                                MerchendiseType = trade.Item.MerchendiseType,
+                                UniversalMerchendise = item.UniversalMerchendise,
                                 Name = trade.Item.Name,
                                 Quantity = trade.BoughtQuantity,
-                                UniversalValue = trade.Item.UniversalValue,
-                                Weight = trade.Item.Weight
+
                             });
 
                             // mise à jour de la TradingLine associée dans la station
@@ -229,27 +215,18 @@ namespace Economy
                             Trades.Add(trade);
                         }
 
-                        // 4. attente
-                        //Thread.Sleep(1000);
-
                         break;
                     case TraderState.Flying:
                         // simulation du voyage
-                        Thread.Sleep((int)Trades.Last(x => !x.Completed).TransportationDistance * 2000);
+                        OwnedShip.Localisation = null;
+                        Thread.Sleep((int) Trades.Last(x => !x.Completed).TransportationDistance * 2000);
 
                         // arrivée
                         OwnedShip.Localisation = DestinationPoint;
                         CurrentState = TraderState.InStation;
                         break;
-                    default:
-                        break;
                 }
             }
-        }
-
-        public void Close()
-        {
-            closureRequested = true;
         }
 
         public override string ToString()
@@ -270,7 +247,7 @@ namespace Economy
                 if (gain == 0)
                     return "0.00";
                 else
-                    return gain.ToString("#.##");
+                    return gain.ToString("#.#");
             }
             return "--";
 
@@ -281,7 +258,7 @@ namespace Economy
             if (money == 0)
                 return "0.00";
             else
-                return money.ToString("#.##");
+                return money.ToString("#.#");
         }
 
         private string CargoText => $"{OwnedShip.TotalCargoHold()} / {OwnedShip.StorageCapacity}";
@@ -296,7 +273,7 @@ namespace Economy
                     return
                         $"{Trades.Last(x => !x.Completed).FromStation.Name} =>>> {Trades.Last(x => !x.Completed).ToStation.Name}" +
                         $" [Distance : {Trades.Last(x => !x.Completed).TransportationDistance}]" +
-                        $" [Résultat estimé : {Trades.Last(x => !x.Completed).EstimatedGain}]";
+                        $" [Résultat estimé : {Trades.Last(x => !x.Completed).EstimatedGain:#.#}]";
                 default:
                     return string.Empty;
             }
@@ -306,8 +283,8 @@ namespace Economy
         {
             if (OwnedShip.Merchendises.Any())
                 return $"{OwnedShip.Merchendises?[0].Name} x {OwnedShip.Merchendises?[0].Quantity}";
-            else
-                return "Vide";
+
+            return "Vide";
         }
     }
 }

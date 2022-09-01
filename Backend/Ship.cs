@@ -1,6 +1,4 @@
-﻿using Backend;
-
-namespace Economy
+﻿namespace Backend
 {
     public class Ship : Storage
     {

@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Economy
+namespace Backend
 {
     public class Trade
     {
@@ -31,33 +31,34 @@ namespace Economy
         public double UnitSellingPrice { get; set; }
         public double UnitBuyingPrice { get; set; }
 
-        public TradingLine()
+        public TradingLine(Station owner, Merchendise item)
         {
-
+            Owner = owner;
+            Item = item;
         }
 
         public override string ToString()
         {
             string itemName = Item.Name;
 
-            if (Item.MerchendiseType == Owner.Production)
+            if (Item.UniversalMerchendise.MerchendiseType == Owner.Production)
                 itemName = Item.Name + "(P)";
 
-            else if (Item.MerchendiseType == Owner.Consumption)
+            else if (Item.UniversalMerchendise.MerchendiseType == Owner.Consumption)
                 itemName = Item.Name + "(C)";
 
-            return $"{itemName,-10} | {QuantityText,-20} | {PricesText,-10}";
+            return $"{itemName,-10} | {QuantityText,-20} | {PricesText,-12}";
         }
         private string QuantityText => $"{Item.Quantity} ({QuantityToBuy}/{QuantityToSell})";
 
-        private string PricesText => $"{PrinceToString(UnitBuyingPrice)}/{PrinceToString(UnitSellingPrice)}";
+        private string PricesText => $"{PrinceToString(QuantityToBuy, UnitBuyingPrice)}/{PrinceToString(QuantityToSell, UnitSellingPrice)}";
 
-        private string PrinceToString(double price)
+        private string PrinceToString(int quantity, double price)
         {
-            if (price == -1)
+            if (quantity == 0)
                 return "--";
             else
-                return $"{price:#.##}";
+                return $"{price:#.#}";
         }
     }
 

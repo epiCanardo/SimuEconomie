@@ -1,4 +1,6 @@
-﻿namespace Economy
+﻿using Backend;
+
+namespace Economy
 {
     class Program
     {
@@ -6,22 +8,24 @@
         {
             var stop = false;
 
-            Task.Factory.StartNew(() =>
-            {
-                World.Instance.StartSimulation();
-            });
-            
+            Task.Factory.StartNew(() => { World.Instance.StartSimulation(); });
+
             while (!stop)
             {
                 UpdateConsoleHeader();
 
-                // affichage des stations
-                //w("Liste des stations", ConsoleColor.Yellow, true);
-                //w("**************************************************");
-                //foreach (var station in World.Instance.Stations)
-                //{
-                //    w(station.ToString());
-                //}
+                // paramètres de la simulation
+
+
+                // affichage des prix globaux
+                w("Valeurs des biens sur le marché global", ConsoleColor.Red, true);
+                w("**************************************************");
+                w($"{"Bien",-10} | {"Poids",-10} | {"Valeur",-10} | {"Actualité",-50} |");
+                foreach (UniversalMerchendise universalMerchendise in World.Instance.SimulationParameters.UniversalMerchendises)
+                {
+                    w(
+                        $"{universalMerchendise.Name,-10} | {universalMerchendise.Weight,-10} | {universalMerchendise.Value.ToString("#.#"),-10} | {universalMerchendise.News,-50} |");
+                }
 
                 // affichage des biens
                 w("Liste des biens au commerce", ConsoleColor.Yellow, true);
@@ -29,20 +33,23 @@
 
                 List<string> text = new List<string>();
 
-                foreach (Station station in World.Instance.Stations)
+                foreach (Station station in World.Instance.SimulationParameters.Stations)
                 {
-                   text.Add($"{station.Name,-47}");
+                    string stationText = $"{station.Name} ({station.NegociatingTraders.Count()})";
+                    text.Add($"{stationText,-49}");
                 }
+
                 w($"{string.Join("| ", text)}");
 
                 text.Clear();
 
-                foreach (MerchendiseType merchendiseType in World.Instance.MerchendiseTypes)
+                foreach (UniversalMerchendise universalMerchendise in World.Instance.SimulationParameters.UniversalMerchendises)
                 {
                     text.Clear();
-                    
-                    foreach (TradingLine line in World.Instance.Stations.SelectMany(x => x.Board.TradingLines)
-                                 .Where(x => x.Item.MerchendiseType == merchendiseType))
+
+                    foreach (TradingLine line in World.Instance.SimulationParameters.Stations.SelectMany(x => x.Board.TradingLines)
+                                 .Where(x => x.Item.UniversalMerchendise.MerchendiseType ==
+                                             universalMerchendise.MerchendiseType))
                     {
                         text.Add(line.ToString());
                     }
@@ -55,7 +62,8 @@
                 // affichage des marchands
                 w("Liste des marchands itinérants", ConsoleColor.Cyan, true);
                 w("**************************************************");
-                w($"{"Rang",-5} | {"Nom du marchand",-20} | {"Gain total",-10} | {"Crédits",-10} | {"Trades",-8} | {"Dist. tot.",-10} | {"Dernier trade",-15} | {"Stockage actuel",-15} | {"Action",-80} | {"Contenu soute",-20}");
+                w(
+                    $"{"Rang",-5} | {"Nom du marchand",-20} | {"Gain total",-10} | {"Crédits",-10} | {"Trades",-8} | {"Dist. tot.",-10} | {"Dernier trade",-15} | {"Stockage actuel",-15} | {"Action",-80} | {"Contenu soute",-20}");
 
                 var traders = World.Instance.FlyingTraders.OrderByDescending(x => x.TotalGain);
                 var i = 1;
@@ -65,7 +73,7 @@
                     i++;
                 }
 
-                Thread.Sleep(50);
+                Thread.Sleep(World.Instance.SimulationParameters.ConsoleRefreshTick);
             }
         }
 

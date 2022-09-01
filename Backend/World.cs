@@ -1,216 +1,121 @@
 ﻿using System.Diagnostics;
+using Newtonsoft.Json;
 
-namespace Economy
+namespace Backend
 {
     public sealed class World
     {
         public static World Instance => _lazy.Value;
-        
-        private static readonly Lazy<World> _lazy = new(() => new World(), LazyThreadSafetyMode.ExecutionAndPublication);
-        private static Random _rnd = new(DateTime.Now.Millisecond);
-        private static bool closureRequested = false;
-        private static Stopwatch _timer;
 
-        public List<Station> Stations { get; set; }
+        private static readonly Lazy<World>
+            _lazy = new(() => new World(), LazyThreadSafetyMode.ExecutionAndPublication);
+
+        private static Random _rnd = new(DateTime.Now.Millisecond);
+        private static Stopwatch _timer;
         public List<FixedTrader> FixedTraders { get; set; }
         public List<FlyingTrader> FlyingTraders { get; set; }
-        public List<MerchendiseType> MerchendiseTypes { get; set; }
+        public Parameters SimulationParameters { get; set; }
+
+        private async Task UpdateDemands()
+        {
+            foreach (UniversalMerchendise merchendise in SimulationParameters.UniversalMerchendises)
+            {
+                merchendise.ApplyNewDemand();
+            }
+
+            while (true)
+            {
+                // une ressource est prise au hasard et on applique un modificateur de consommation / production
+                Thread.Sleep(SimulationParameters.DemandsUpdateTick);
+                UniversalMerchendise merchendise = SimulationParameters.UniversalMerchendises[_rnd.Next(0, SimulationParameters.UniversalMerchendises.Count)];
+                merchendise.SetNewDemand(_rnd.Next(0, 2));
+            }
+        }
 
         private World()
         {
             // démarrage du temps
-            _timer = new Stopwatch();
-            _timer.Start();
+            InitializeTimer();
 
-            // les stations
-            Stations = new List<Station>
-            {
-                new()
-                {
-                    ID = 0, Coordinates = new double[] {0, 0, 0}, Production = MerchendiseType.Gold, Consumption = MerchendiseType.Nothing,
-                    Name = "Le marché", StorageCapacity = 1000
-                },
-                new()
-                {
-                    ID = 1, Coordinates = new double[] {0, 0, 1}, Production = MerchendiseType.Iron,Consumption = MerchendiseType.Nothing,
-                    Name = "Le trou perdu", StorageCapacity = 2500
-                },
-                new()
-                {
-                    ID = 2, Coordinates = new double[] {0, 0, 2}, Consumption = MerchendiseType.Gold, Production = MerchendiseType.Nothing,
-                    Name = "Le mauvais endroit", StorageCapacity = 5000
-                },
-                new()
-                {
-                    ID = 3, Coordinates = new double[] {0, 0, 3}, Consumption = MerchendiseType.Iron, Production = MerchendiseType.Nothing,
-                    Name = "La fortune", StorageCapacity = 10000
-                }
-            };
-                
+            // récupération des paramètres de simulation
+            InitializeSimulationParameters();
+
             // les traders fixes
-            FixedTraders = new List<FixedTrader>
-            {
-                new()
-                {
-                    ID = 100, Account = 10000, Name = "", WorkingStation = Stations.First(x => x.ID == 0),
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 101, Account = 10000, Name = "", WorkingStation = Stations.First(x => x.ID == 1),
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 102, Account = 10000, Name = "", WorkingStation = Stations.First(x => x.ID == 2),
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 103, Account = 10000, Name = "", WorkingStation = Stations.First(x => x.ID == 3),
-                    CurrentState = Trader.TraderState.InStation
-                }
-            };
+            InitializeFixedTraders();
 
             // les traders itinérants
-            FlyingTraders = new List<FlyingTrader>
-            {
-                new()
-                {
-                    ID = 1000, Account = 10000,
-                    Name = "Golan Trevize",
-                    OwnedShip = new Ship {ID = 10000, StorageCapacity = 100, Localisation = Stations[0]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1001,
-                    Account = 10000,
-                    Name = "Salvor Hardin",
-                    OwnedShip = new Ship {ID = 10001, StorageCapacity = 100, Localisation = Stations[1]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1002, Account = 10000,
-                    Name = "Donald J. Trump",
-                    OwnedShip = new Ship {ID = 10002, StorageCapacity = 100, Localisation = Stations[2]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1003,
-                    Account = 10000,
-                    Name = "Elon Musk",
-                    OwnedShip = new Ship {ID = 10003, StorageCapacity = 100, Localisation = Stations[3]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1004, Account = 10000,
-                    Name = "Ultra Doux",
-                    OwnedShip = new Ship {ID = 10004, StorageCapacity = 200, Localisation = Stations[0]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1005,
-                    Account = 10000,
-                    Name = "Médiocre UI",
-                    OwnedShip = new Ship {ID = 10005, StorageCapacity = 200, Localisation = Stations[1]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1006, Account = 10000,
-                    Name = "Marie Curie",
-                    OwnedShip = new Ship {ID = 10006, StorageCapacity = 200, Localisation = Stations[2]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1007,
-                    Account = 10000,
-                    Name = "Hiroko",
-                    OwnedShip = new Ship {ID = 10007, StorageCapacity = 200, Localisation = Stations[3]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1008, Account = 10000,
-                    Name = "Jeff Bezos",
-                    OwnedShip = new Ship {ID = 10004, StorageCapacity = 500, Localisation = Stations[0]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1009,
-                    Account = 10000,
-                    Name = "X71-F",
-                    OwnedShip = new Ship {ID = 10005, StorageCapacity = 500, Localisation = Stations[1]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1010, Account = 10000,
-                    Name = "Cléon XXII",
-                    OwnedShip = new Ship {ID = 10006, StorageCapacity = 500, Localisation = Stations[2]},
-                    CurrentState = Trader.TraderState.InStation
-                },
-                new()
-                {
-                    ID = 1011,
-                    Account = 10000,
-                    Name = "Caliméro",
-                    OwnedShip = new Ship {ID = 10007, StorageCapacity = 500, Localisation = Stations[3]},
-                    CurrentState = Trader.TraderState.InStation
-                }
-            };
-
-            // détermination des poids et valeurs
+            InitializeFlyingTraders();
 
             // répartition des marchandises dans les stations
-            MerchendiseTypes = new List<MerchendiseType>
-            {
-                MerchendiseType.Gold, MerchendiseType.Orionum, MerchendiseType.Deuterium, MerchendiseType.Iron
-            };
+            InitializeMerchendisesRepartition();
+        }
 
-            for (int i = 0; i < Stations.Count; i++)
+        private void InitializeTimer()
+        {
+            _timer = new Stopwatch();
+            _timer.Start();
+        }
+
+        private void InitializeSimulationParameters()
+        {
+            SimulationParameters = new Parameters();
+
+            string jsonMoq;
+            using (StreamReader sR = new StreamReader("SimulationParams.json"))
             {
-                Stations[i].Merchendises = new List<Merchendise>
+                jsonMoq = sR.ReadToEnd();
+                sR.Close();
+            }
+
+            SimulationParameters = JsonConvert.DeserializeObject<Parameters>(jsonMoq);
+        }
+
+        private void InitializeMerchendisesRepartition()
+        {
+            foreach (var station in SimulationParameters.Stations)
+            {
+                station.Merchendises = new List<Merchendise>
                 {
                     new()
                     {
-                        MerchendiseType = MerchendiseType.Gold, Name = "Or", Weight = 20, UniversalValue = 100,
+                        UniversalMerchendise =
+                            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Gold),
+                        Name = "Or",
                         Quantity = (_rnd.Next(0, 2) == 1)
-                            ? _rnd.Next(0, GetShortageMaxBound(20, Stations[i].StorageCapacity))
-                            : _rnd.Next(GetExcessMinBound(20, Stations[i].StorageCapacity),
-                                GetMaxBound(20, Stations[i].StorageCapacity))
+                            ? _rnd.Next(0, GetShortageMaxBound(20, station.StorageCapacity))
+                            : _rnd.Next(GetExcessMinBound(20, station.StorageCapacity),
+                                GetMaxBound(20, station.StorageCapacity))
                     },
                     new()
                     {
-                        MerchendiseType = MerchendiseType.Orionum, Name = "Orionum", Weight = 50,
-                        UniversalValue = 500,
+                        UniversalMerchendise =
+                            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Orionum),
+                        Name = "Orionum",
+
                         Quantity = (_rnd.Next(0, 2) == 1)
-                            ? _rnd.Next(0, GetShortageMaxBound(50, Stations[i].StorageCapacity))
-                            : _rnd.Next(GetExcessMinBound(50, Stations[i].StorageCapacity),
-                                GetMaxBound(50, Stations[i].StorageCapacity))
+                            ? _rnd.Next(0, GetShortageMaxBound(50, station.StorageCapacity))
+                            : _rnd.Next(GetExcessMinBound(50, station.StorageCapacity),
+                                GetMaxBound(50, station.StorageCapacity))
                     },
                     new()
                     {
-                        MerchendiseType = MerchendiseType.Deuterium, Name = "H2", Weight = 1, UniversalValue = 300,
+                        UniversalMerchendise =
+                            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Deuterium),
+                        Name = "H2",
                         Quantity = (_rnd.Next(0, 2) == 1)
-                            ? _rnd.Next(0, GetShortageMaxBound(1, Stations[i].StorageCapacity))
-                            : _rnd.Next(GetExcessMinBound(1, Stations[i].StorageCapacity),
-                                GetMaxBound(1, Stations[i].StorageCapacity))
+                            ? _rnd.Next(0, GetShortageMaxBound(1, station.StorageCapacity))
+                            : _rnd.Next(GetExcessMinBound(1, station.StorageCapacity),
+                                GetMaxBound(1, station.StorageCapacity))
                     },
                     new()
                     {
-                        MerchendiseType = MerchendiseType.Iron, Name = "Fer", Weight = 10, UniversalValue = 50,
+                        UniversalMerchendise =
+                            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Iron),
+                        Name = "Fer",
                         Quantity = (_rnd.Next(0, 2) == 1)
-                            ? _rnd.Next(0, GetShortageMaxBound(10, Stations[i].StorageCapacity))
-                            : _rnd.Next(GetExcessMinBound(10, Stations[i].StorageCapacity),
-                                GetMaxBound(10, Stations[i].StorageCapacity))
+                            ? _rnd.Next(0, GetShortageMaxBound(10, station.StorageCapacity))
+                            : _rnd.Next(GetExcessMinBound(10, station.StorageCapacity),
+                                GetMaxBound(10, station.StorageCapacity))
                     }
                     //,
                     //{
@@ -245,8 +150,131 @@ namespace Economy
                     //    }
                     //},
                 };
-                Stations[i].InitializeTradingBoard();
+                station.InitializeTradingBoard();
             }
+        }
+
+        private void InitializeFlyingTraders()
+        {
+            FlyingTraders = new List<FlyingTrader>
+            {
+                new()
+                {
+                    ID = 1000, Account = 10000,
+                    Name = "Golan Trevize",
+                    OwnedShip = new Ship {ID = 10000, StorageCapacity = 100, Localisation = SimulationParameters.Stations[0]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1001,
+                    Account = 10000,
+                    Name = "Salvor Hardin",
+                    OwnedShip = new Ship {ID = 10001, StorageCapacity = 100, Localisation = SimulationParameters.Stations[1]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1002, Account = 10000,
+                    Name = "Donald J. Trump",
+                    OwnedShip = new Ship {ID = 10002, StorageCapacity = 100, Localisation = SimulationParameters.Stations[2]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1003,
+                    Account = 10000,
+                    Name = "Elon Musk",
+                    OwnedShip = new Ship {ID = 10003, StorageCapacity = 100, Localisation = SimulationParameters.Stations[3]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1004, Account = 10000,
+                    Name = "Ultra Doux",
+                    OwnedShip = new Ship {ID = 10004, StorageCapacity = 200, Localisation = SimulationParameters.Stations[0]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1005,
+                    Account = 10000,
+                    Name = "Médiocre UI",
+                    OwnedShip = new Ship {ID = 10005, StorageCapacity = 200, Localisation = SimulationParameters.Stations[1]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1006, Account = 10000,
+                    Name = "Marie Curie",
+                    OwnedShip = new Ship {ID = 10006, StorageCapacity = 200, Localisation = SimulationParameters.Stations[2]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1007,
+                    Account = 10000,
+                    Name = "Hiroko",
+                    OwnedShip = new Ship {ID = 10007, StorageCapacity = 200, Localisation = SimulationParameters.Stations[3]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1008, Account = 10000,
+                    Name = "Jeff Bezos",
+                    OwnedShip = new Ship {ID = 10004, StorageCapacity = 500, Localisation = SimulationParameters.Stations[0]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1009,
+                    Account = 10000,
+                    Name = "X71-F",
+                    OwnedShip = new Ship {ID = 10005, StorageCapacity = 500, Localisation = SimulationParameters.Stations[1]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1010, Account = 10000,
+                    Name = "Cléon XXII",
+                    OwnedShip = new Ship {ID = 10006, StorageCapacity = 500, Localisation = SimulationParameters.Stations[2]},
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 1011,
+                    Account = 10000,
+                    Name = "Caliméro",
+                    OwnedShip = new Ship {ID = 10007, StorageCapacity = 500, Localisation = SimulationParameters.Stations[3]},
+                    CurrentState = Trader.TraderState.InStation
+                }
+            };
+        }
+        private void InitializeFixedTraders()
+        {
+            FixedTraders = new List<FixedTrader>
+            {
+                new()
+                {
+                    ID = 100, Account = 10000, Name = "", WorkingStation = SimulationParameters.Stations.First(x => x.ID == 0),
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 101, Account = 10000, Name = "", WorkingStation = SimulationParameters.Stations.First(x => x.ID == 1),
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 102, Account = 10000, Name = "", WorkingStation = SimulationParameters.Stations.First(x => x.ID == 2),
+                    CurrentState = Trader.TraderState.InStation
+                },
+                new()
+                {
+                    ID = 103, Account = 10000, Name = "", WorkingStation = SimulationParameters.Stations.First(x => x.ID == 3),
+                    CurrentState = Trader.TraderState.InStation
+                }
+            };
         }
 
         private int GetShortageMaxBound(int weight, int capacity)
@@ -256,12 +284,12 @@ namespace Economy
 
         private int GetExcessMinBound(int weight, int capacity)
         {
-            return (int)Math.Floor(capacity / weight * 0.75);
+            return (int) Math.Floor(capacity / weight * 0.75);
         }
 
         private int GetMaxBound(int weight, int capacity)
         {
-            return (int)Math.Floor((double)(capacity / weight));
+            return (int) Math.Floor((double) (capacity / weight));
         }
 
         public void StartSimulation()
@@ -271,10 +299,7 @@ namespace Economy
             // instanciation des task par marchand fixe
             foreach (var fixedTrader in FixedTraders)
             {
-                tasks.Add(Task.Factory.StartNew(() =>
-                {                    
-                    fixedTrader.Loop().Wait();                    
-                }));
+                tasks.Add(Task.Factory.StartNew(() => { fixedTrader.StorageCleanup().Wait(); }));
             }
 
             // instanciation des task par marchand volant
@@ -283,26 +308,28 @@ namespace Economy
                 tasks.Add(Task.Factory.StartNew(() =>
                 {
                     Thread.Sleep(_rnd.Next(1000, 5000));
-                    flyingTrader.Loop().Wait();
+                    flyingTrader.MainLoop().Wait();
                 }));
             }
 
-            Task.WaitAll(tasks.ToArray());
-        }
+            // instanciation des task par station
+            foreach (var station in SimulationParameters.Stations)
+            {
+                tasks.Add(Task.Factory.StartNew(() =>
+                {
+                    tasks.Add(Task.Factory.StartNew(() => { station.UpdateProdAndConso().Wait(); }));
+                }));
+            }
 
-        public long GetElapsedTime()
-        {
-            return _timer.ElapsedMilliseconds;
+            // instanciation de la tâche du marché global
+            tasks.Add(Task.Factory.StartNew(() => { UpdateDemands().Wait(); }));
+
+            Task.WaitAll(tasks.ToArray());
         }
 
         public long GetElapsedTicks()
         {
             return _timer.ElapsedTicks;
-        }
-
-        public void Close()
-        {
-            closureRequested = true;
         }
     }
 }

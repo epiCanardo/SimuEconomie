@@ -1,6 +1,4 @@
-﻿using Backend;
-
-namespace Economy;
+﻿namespace Backend;
 
 public abstract class Storage : Entity
 {
@@ -12,7 +10,7 @@ public abstract class Storage : Entity
         int space = 0;
         foreach (var item in Merchendises)
         {
-            space += item.Quantity * item.Weight;
+            space += item.Quantity * item.UniversalMerchendise.Weight;
         }
 
         return StorageCapacity - space;
