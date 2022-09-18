@@ -152,7 +152,7 @@ namespace Backend
                                     // déduction du prix du trajet
                                     transportationCost = Math.Round(
                                         line.Owner.DistanceWithOtherStorage(sortedLine.Owner) *
-                                        (OwnedShip.StorageCapacity * 0.2),
+                                        (OwnedShip.StorageCapacity * 0.1),
                                         2);
 
                                     double localgain = sellingprice - buyprice - transportationCost;

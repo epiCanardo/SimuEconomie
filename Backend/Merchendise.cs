@@ -43,12 +43,13 @@
 
         public void SetNewDemand(int rndResult)
         {
-            if (rndResult == 0)
+            // baisse si demande pas déjà eau minimum
+            if (rndResult == 0 && Demand > 0)
             {
                 Demand = Math.Max(0, Demand - 1);
                 Value -= Value * 0.1;
             }
-            else
+            else if(rndResult > 0 && Demand < 2)
             {
                 Demand = Math.Min(2, Demand + 1);
                 Value += Value * 0.1;

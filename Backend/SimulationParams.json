@@ -4,7 +4,7 @@
   "stations": [
     {
       "production": 0,
-      "consumption": 0,
+      "consumption": 3,
       "mainTick": 5000,
       "storageCapacity": 1000,
       "id": 0,
@@ -13,7 +13,7 @@
     },
     {
       "production": 3,
-      "consumption": 3,
+      "consumption": 6,
       "mainTick": 5000,
       "storageCapacity": 2500,
       "id": 1,
@@ -22,7 +22,7 @@
     },
     {
       "production": 6,
-      "consumption": 6,
+      "consumption": 1,
       "mainTick": 5000,
       "storageCapacity": 5000,
       "id": 2,
@@ -31,7 +31,7 @@
     },
     {
       "production": 1,
-      "consumption": 1,
+      "consumption": 0,
       "mainTick": 10000,
       "storageCapacity": 1000,
       "id": 3,
