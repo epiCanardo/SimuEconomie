@@ -74,49 +74,66 @@ namespace Backend
         {
             foreach (var station in SimulationParameters.Stations)
             {
-                station.Merchendises = new List<Merchendise>
-                {
-                    new()
-                    {
-                        UniversalMerchendise =
-                            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Gold),
-                        Name = "Or",
-                        Quantity = (_rnd.Next(0, 2) == 1)
-                            ? _rnd.Next(0, GetShortageMaxBound(20, station.StorageCapacity))
-                            : _rnd.Next(GetExcessMinBound(20, station.StorageCapacity),
-                                GetMaxBound(20, station.StorageCapacity))
-                    },
-                    new()
-                    {
-                        UniversalMerchendise =
-                            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Orionum),
-                        Name = "Orionum",
+                station.Merchendises = new List<Merchendise>();
 
-                        Quantity = (_rnd.Next(0, 2) == 1)
-                            ? _rnd.Next(0, GetShortageMaxBound(50, station.StorageCapacity))
-                            : _rnd.Next(GetExcessMinBound(50, station.StorageCapacity),
-                                GetMaxBound(50, station.StorageCapacity))
-                    },
-                    new()
+                foreach (var merchendise in SimulationParameters.UniversalMerchendises)
+                {
+                    station.Merchendises.Add(new()
                     {
-                        UniversalMerchendise =
-                            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Deuterium),
-                        Name = "H2",
+                        UniversalMerchendise = merchendise,
+                        Name = merchendise.Name,
                         Quantity = (_rnd.Next(0, 2) == 1)
-                            ? _rnd.Next(0, GetShortageMaxBound(1, station.StorageCapacity))
-                            : _rnd.Next(GetExcessMinBound(1, station.StorageCapacity),
-                                GetMaxBound(1, station.StorageCapacity))
-                    },
-                    new()
-                    {
-                        UniversalMerchendise =
-                            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Iron),
-                        Name = "Fer",
-                        Quantity = (_rnd.Next(0, 2) == 1)
-                            ? _rnd.Next(0, GetShortageMaxBound(10, station.StorageCapacity))
-                            : _rnd.Next(GetExcessMinBound(10, station.StorageCapacity),
-                                GetMaxBound(10, station.StorageCapacity))
-                    }
+                            ? _rnd.Next(0, GetShortageMaxBound(merchendise.Weight, station.StorageCapacity))
+                            : _rnd.Next(GetExcessMinBound(merchendise.Weight, station.StorageCapacity),
+                                GetMaxBound(merchendise.Weight, station.StorageCapacity))
+                    });
+                }
+
+                station.InitializeTradingBoard();
+
+            }
+                //{
+                //    new()
+                //    {
+                //        UniversalMerchendise =
+                //            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Gold),
+                //        Name = "Or",
+                //        Quantity = (_rnd.Next(0, 2) == 1)
+                //            ? _rnd.Next(0, GetShortageMaxBound(20, station.StorageCapacity))
+                //            : _rnd.Next(GetExcessMinBound(20, station.StorageCapacity),
+                //                GetMaxBound(20, station.StorageCapacity))
+                //    },
+                //    new()
+                //    {
+                //        UniversalMerchendise =
+                //            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Orionum),
+                //        Name = "Orionum",
+
+                //        Quantity = (_rnd.Next(0, 2) == 1)
+                //            ? _rnd.Next(0, GetShortageMaxBound(50, station.StorageCapacity))
+                //            : _rnd.Next(GetExcessMinBound(50, station.StorageCapacity),
+                //                GetMaxBound(50, station.StorageCapacity))
+                //    },
+                //    new()
+                //    {
+                //        UniversalMerchendise =
+                //            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Deuterium),
+                //        Name = "H2",
+                //        Quantity = (_rnd.Next(0, 2) == 1)
+                //            ? _rnd.Next(0, GetShortageMaxBound(1, station.StorageCapacity))
+                //            : _rnd.Next(GetExcessMinBound(1, station.StorageCapacity),
+                //                GetMaxBound(1, station.StorageCapacity))
+                //    },
+                //    new()
+                //    {
+                //        UniversalMerchendise =
+                //            SimulationParameters.UniversalMerchendises.First(x => x.MerchendiseType == MerchendiseType.Iron),
+                //        Name = "Fer",
+                //        Quantity = (_rnd.Next(0, 2) == 1)
+                //            ? _rnd.Next(0, GetShortageMaxBound(10, station.StorageCapacity))
+                //            : _rnd.Next(GetExcessMinBound(10, station.StorageCapacity),
+                //                GetMaxBound(10, station.StorageCapacity))
+                //    }
                     //,
                     //{
                     //    new()
@@ -149,9 +166,9 @@ namespace Backend
                     //                GetMaxBound(2, Stations[i].StorageCapacity))
                     //    }
                     //},
-                };
-                station.InitializeTradingBoard();
-            }
+                //};
+                //station.InitializeTradingBoard();
+            //}
         }
 
         private void InitializeFlyingTraders()

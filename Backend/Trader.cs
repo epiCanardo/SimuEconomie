@@ -76,7 +76,7 @@ namespace Backend
 
                             // uniquement une seule marchandise pour le moment !  
                             // on vérifie pas s'il reste de la place, on s'en bat les couilles on balance tout !
-                            TradingLine line = (OwnedShip.Localisation as Station).Board.TradingLines.First(x =>
+                            TradingLine line = ((Station)OwnedShip.Localisation).Board.TradingLines.First(x =>
                                 x.Item.UniversalMerchendise.MerchendiseType ==
                                 OwnedShip.Merchendises[0].UniversalMerchendise.MerchendiseType);
 
@@ -87,7 +87,7 @@ namespace Backend
                             trade.Completed = true;
 
                             // ajout au stockage de la station
-                            Merchendise merchendise = (OwnedShip.Localisation as Station).Merchendises.First(x =>
+                            Merchendise merchendise = ((Station)OwnedShip.Localisation).Merchendises.First(x =>
                                 x.UniversalMerchendise.MerchendiseType ==
                                 line.Item.UniversalMerchendise.MerchendiseType);
                             merchendise.Quantity += trade.SoldQuantity;
@@ -102,7 +102,7 @@ namespace Backend
                             OwnedShip.Merchendises.RemoveAt(0);
 
                             // mise à jour de la TradingLine associée dans la station
-                            (OwnedShip.Localisation as Station).UpdateLine(line, merchendise);
+                            ((Station)OwnedShip.Localisation).UpdateLine(line, merchendise);
                         }
 
                         // 2. attente aléatoire
@@ -120,7 +120,7 @@ namespace Backend
 
                         // 3. calcul du meilleur trade
                         // itération sur la liste des marchandises présentes dans la station
-                        foreach (TradingLine line in (OwnedShip.Localisation as Station).Board.TradingLines.Where(x =>
+                        foreach (TradingLine line in ((Station)OwnedShip.Localisation).Board.TradingLines.Where(x =>
                                      x.QuantityToSell > 0))
                         {
                             // on vérifie la quantité max à acheter
@@ -172,7 +172,7 @@ namespace Backend
                         if (buyQty > 0)
                         {
                             // retrait du stockage de la station
-                            Merchendise item = (OwnedShip.Localisation as Station).Merchendises.First(x =>
+                            Merchendise item = ((Station)OwnedShip.Localisation).Merchendises.First(x =>
                                 x.UniversalMerchendise.MerchendiseType ==
                                 selectedLine.Item.UniversalMerchendise.MerchendiseType);
                             item.Quantity -= buyQty;
@@ -180,14 +180,14 @@ namespace Backend
                             Trade trade = new Trade
                             {
                                 Item = item,
-                                FromStation = (OwnedShip.Localisation as Station),
+                                FromStation = OwnedShip.Localisation as Station,
                                 ToStation = selectedStation,
                                 BoughtPrice = buyQty * selectedLine.UnitSellingPrice,
                                 BoughtQuantity = buyQty,
                                 TransportationCost = transportationCost,
                                 TransportationDistance =
                                     Convert.ToInt32(
-                                        (OwnedShip.Localisation as Station).DistanceWithOtherStorage(selectedStation)),
+                                        ((Station)OwnedShip.Localisation).DistanceWithOtherStorage(selectedStation)),
                                 EstimatedGain = estimatedgain
                             };
 
@@ -204,7 +204,7 @@ namespace Backend
                             });
 
                             // mise à jour de la TradingLine associée dans la station
-                            (OwnedShip.Localisation as Station).UpdateLine(selectedLine, item);
+                            ((Station)OwnedShip.Localisation).UpdateLine(selectedLine, item);
 
                             // définition de la destination
                             DestinationPoint = selectedStation;
@@ -236,7 +236,7 @@ namespace Backend
             return result.ToString();
         }
 
-        private string TradesCountText => (Trades.Any(x=>x.Completed)) ? Trades.Count(x => x.Completed).ToString() : "0";        
+        private string TradesCountText => Trades.Any(x=>x.Completed) ? Trades.Count(x => x.Completed).ToString() : "0";        
 
         private string LastTradeGainText()
         {
